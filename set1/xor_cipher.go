@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func FindSingleByteXOR(bytes []byte) (*byte, error) {
+func FindSingleByteXOR(bytes []byte) (*byte, float64, error) {
 	smallestScore := math.MaxFloat64
 	var closestFit byte
 
@@ -18,7 +18,7 @@ func FindSingleByteXOR(bytes []byte) (*byte, error) {
 
 		res, err := FixedXOR(bytes, test)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		score := ScoreText(string(res))
@@ -29,7 +29,7 @@ func FindSingleByteXOR(bytes []byte) (*byte, error) {
 		}
 	}
 
-	return &closestFit, nil
+	return &closestFit, smallestScore, nil
 }
 
 // Smaller score means better match

@@ -15,7 +15,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	closestFit, err := set1.FindSingleByteXOR(bytes)
+	closestFit, _, err := set1.FindSingleByteXOR(bytes)
 	if err != nil {
 		log.Fatal(err)
 	}
