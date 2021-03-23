@@ -33,3 +33,27 @@ func TestRepeatingKeyEncrypt(t *testing.T) {
 		})
 	}
 }
+
+func TestEditDistance(t *testing.T) {
+	tests := []struct {
+		name             string
+		a                string
+		b                string
+		expectedDistance int
+	}{
+		{
+			name:             "1",
+			a:                "this is a test",
+			b:                "wokka wokka!!!",
+			expectedDistance: 37,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			res, err := EditDistance([]byte(test.a), []byte(test.b))
+			require.NoError(t, err)
+			require.Equal(t, test.expectedDistance, res)
+		})
+	}
+}
