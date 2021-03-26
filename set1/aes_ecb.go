@@ -17,3 +17,13 @@ func DecryptAESECB(key, ciphertxt []byte) ([]byte, error) {
 
 	return b, nil
 }
+
+func IsAESECBEncrypted(ciphertxt []byte, keylen int) bool {
+	m := make(map[string]int)
+
+	for i := 0; i < len(ciphertxt); i += keylen {
+		m[string(ciphertxt[i:i+keylen])]++
+	}
+
+	return len(m) < len(ciphertxt)/keylen
+}
