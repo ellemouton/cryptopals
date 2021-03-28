@@ -67,13 +67,7 @@ func ModeOracle(input []byte) (string, error) {
 		return "", nil
 	}
 
-	// count duplicate chunks
-	m := make(map[string]int)
-	for i := 0; i < len(ct); i += 16 {
-		m[string(ct[i:i+16])]++
-	}
-
-	if len(m) < len(ct)/16 {
+	if set1.IsAESECBEncrypted(ct, 16) {
 		return "ECB", nil
 	}
 
@@ -81,7 +75,7 @@ func ModeOracle(input []byte) (string, error) {
 }
 
 func RandomEncrypt(plaintxt []byte) ([]byte, error) {
-	key := genAESKey()
+	key := GenAESKey()
 
 	before := make([]byte, rand.Intn(11))
 	rand.Read(before)
@@ -107,7 +101,7 @@ func RandomEncrypt(plaintxt []byte) ([]byte, error) {
 		}
 	default:
 		fmt.Println("using CBC")
-		iv := genAESKey()
+		iv := GenAESKey()
 		res, err = CBCEncrypt(plaintxt, key, iv)
 		if err != nil {
 			return nil, err
@@ -117,7 +111,7 @@ func RandomEncrypt(plaintxt []byte) ([]byte, error) {
 	return res, nil
 }
 
-func genAESKey() []byte {
+func GenAESKey() []byte {
 	token := make([]byte, 16)
 	rand.Read(token)
 	return token
