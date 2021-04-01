@@ -31,6 +31,12 @@ func TestPKCS7Pad(t *testing.T) {
 			input:          "YELLOW SUBMARINE",
 			expectedOutput: "YELLOW SUBMARINE\x02\x02",
 		},
+		{
+			name:           "4",
+			blockSize:      16,
+			input:          "admin",
+			expectedOutput: "admin\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b",
+		},
 	}
 
 	for _, test := range tests {

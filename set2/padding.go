@@ -7,7 +7,7 @@ func PKCS7Pad(data []byte, blockLen int) []byte {
 		size += blockLen * (len(data) / blockLen)
 	}
 
-	num := size % len(data)
+	num := size - len(data)
 	res := make([]byte, len(data)+num)
 	copy(res, data)
 

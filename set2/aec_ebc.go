@@ -107,3 +107,7 @@ func EncryptECBFixedKey(input []byte) ([]byte, error) {
 	padded := PKCS7Pad(input, len(fixedKey))
 	return set1.EncryptAESECB(fixedKey, padded)
 }
+
+func DecryptECBFixedKey(input []byte) ([]byte, error) {
+	return set1.DecryptAESECB(fixedKey, input)
+}
