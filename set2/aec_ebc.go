@@ -3,14 +3,11 @@ package set2
 import (
 	"encoding/base64"
 	"log"
+	"math"
+	"math/rand"
 
 	"github.com/ellemouton/cryptopals/set1"
 )
-
-var unknownStr = "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg" +
-	"aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq" +
-	"dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg" +
-	"YnkK"
 
 func ECBDecryptionSimple() ([]byte, error) {
 	ct, err := EncryptWithUnknownStr(nil)
@@ -25,7 +22,7 @@ func ECBDecryptionSimple() ([]byte, error) {
 		myIn = myIn[1:]
 		res, err := EncryptWithUnknownStr(myIn)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 
 		chunk := res[0:len(ct)]
@@ -87,7 +84,13 @@ func easyInput(size int) []byte {
 	return res
 }
 
+// AES-128-ECB(attacker-controlled || target-bytes, random-key)
 func EncryptWithUnknownStr(input []byte) ([]byte, error) {
+	unknownStr := "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg" +
+		"aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq" +
+		"dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg" +
+		"YnkK"
+
 	unknown, err := base64.StdEncoding.DecodeString(unknownStr)
 	if err != nil {
 		log.Fatal(err)
@@ -97,7 +100,40 @@ func EncryptWithUnknownStr(input []byte) ([]byte, error) {
 	return EncryptECBFixedKey(input)
 }
 
-var fixedKey []byte
+// AES-128-ECB(random-prefix || attacker-controlled || target-bytes, random-key)
+func EncryptWithUnknownStrAndPrefix(input []byte) ([]byte, error) {
+	unknownStr := "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg" +
+		"aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq" +
+		"dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg" +
+		"YnkK"
+
+	unknown, err := base64.StdEncoding.DecodeString(unknownStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	res := GetRandomPrefix()
+	res = append(res, input...)
+	res = append(res, unknown...)
+	return EncryptECBFixedKey(res)
+}
+
+var (
+	fixedKey   []byte
+	randomPref []byte
+)
+
+func GetRandomPrefix() []byte {
+	if randomPref != nil {
+		return randomPref
+	}
+
+	prefLen := rand.Intn(40)
+	randomPref = make([]byte, prefLen)
+	rand.Read(randomPref)
+
+	return randomPref
+}
 
 func EncryptECBFixedKey(input []byte) ([]byte, error) {
 	if fixedKey == nil {
@@ -110,4 +146,102 @@ func EncryptECBFixedKey(input []byte) ([]byte, error) {
 
 func DecryptECBFixedKey(input []byte) ([]byte, error) {
 	return set1.DecryptAESECB(fixedKey, input)
+}
+
+func ECBDecryptionHard() ([]byte, error) {
+	ks := 16
+
+	threeIn := easyInput(ks * 3)
+
+	ct1, err := EncryptWithUnknownStrAndPrefix(threeIn)
+	if err != nil {
+		return nil, err
+	}
+
+	ctPattern := make([]byte, 16)
+	m := make(map[string]int)
+	for i := 0; i < len(ct1); i += ks {
+		m[string(ct1[i:i+16])]++
+		if m[string(ct1[i:i+16])] == 2 {
+			copy(ctPattern, ct1[i:i+16])
+			break
+		}
+	}
+
+	// Find length of the random bytes
+
+	count := 0
+	pos := 0
+	for {
+		input := easyInput(ks + count)
+		ct, err := EncryptWithUnknownStrAndPrefix(input)
+		if err != nil {
+			return nil, err
+		}
+
+		pos = findFirstPosition(ctPattern, ct)
+		if pos != -1 {
+			break
+		}
+
+		count++
+	}
+
+	randomPrefLen := pos - count
+
+	ct, err := EncryptWithUnknownStrAndPrefix(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	unknownTxtLen := 16 * int(math.Ceil(float64(len(ct)-randomPrefLen)/float64(16)))
+	myIn := easyInput(unknownTxtLen + count)
+	var plain []byte
+
+	for b := 0; b < len(ct)-randomPrefLen; b++ {
+		myIn = myIn[1:]
+		res, err := EncryptWithUnknownStrAndPrefix(myIn)
+		if err != nil {
+			return nil, err
+		}
+
+		chunk := res[pos : pos+unknownTxtLen]
+
+		for i := 0; i < 256; i++ {
+			temp := append(myIn, plain...)
+			temp = append(temp, byte(i))
+			c, err := EncryptWithUnknownStrAndPrefix(temp)
+			if err != nil {
+				return nil, err
+			}
+
+			ed, err := set1.EditDistance(chunk, c[pos:pos+unknownTxtLen])
+			if err != nil {
+				return nil, err
+			}
+
+			if ed == 0 {
+				plain = append(plain, byte(i))
+				break
+			}
+		}
+	}
+
+	return plain, nil
+}
+
+func findFirstPosition(data, space []byte) int {
+	if len(data) > len(space) {
+		return -1
+	}
+
+	span := len(data)
+
+	for i := 0; i < len(space)-span; i++ {
+		if string(data) == string(space[i:i+span]) {
+			return i
+		}
+	}
+
+	return -1
 }
