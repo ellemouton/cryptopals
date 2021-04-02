@@ -17,3 +17,27 @@ func PKCS7Pad(data []byte, blockLen int) []byte {
 
 	return res
 }
+
+func ValidateAndStripPKCS7Pad(data []byte) (bool, []byte) {
+	num := int(data[len(data)-1])
+	count := 1
+
+	if count == num {
+		return true, data[0 : len(data)-count]
+	}
+
+	for i := len(data) - 2; i >= 0; i-- {
+
+		if int(data[i]) != num {
+			return false, nil
+		}
+
+		count++
+
+		if count == num {
+			return true, data[0 : len(data)-count]
+		}
+	}
+
+	return false, nil
+}
