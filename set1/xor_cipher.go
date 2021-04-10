@@ -47,7 +47,7 @@ func ScoreText(text string) float64 {
 }
 
 const defaultTrainingData = `Routing hints are important for nodes that only have private channels (channels that are not announced to the network and ie are not intended to be used for routing). For these nodes, when they create an invoicce (ie: someone intends to pay them) they need to include routing hints in the invoice so that the payer can construct a path to the recipient. 
-Yes I would say they do leak privacy since they include the short channel ID of the channel and so now anyone with the invoice knows which tx on the blockchain is linked to the channel. For each block, the single-byte XOR key that produces the best looking histogram is the repeating-key XOR key byte for that block. Put them together and you have the key. Now transpose the blocks: make a block that is the first byte of every block, and a block that is the second byte of every block, and so on.
+Yes I would say they do leak privacy since they include the short channel ID of the channel and so now anyone with the invoice knows which tx on the blockchain is linked to the channel. For each block, the single-byte XOR key that produces the best looking histogram is the repeating-key XOR key byte for that block. Put them together and you have the key. Now transpose the blocks: make a block that is the first byte of every block, and a block that is the second byte of every block, and so on. Because the CTR nonce wasn't randomized for each encryption, each ciphertext has been encrypted against the same keystream. This is very bad.
 `
 
 func FrequencyMap(source string) map[byte]float64 {

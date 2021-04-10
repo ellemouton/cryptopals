@@ -19,20 +19,24 @@ func DecryptRepeatingXORCypher(cyphertext []byte) ([]byte, []byte, error) {
 	return res, key, nil
 }
 
-func EstimateRepeatingXORKey(cyphertext []byte) ([]byte, error) {
-	bestKeySize, err := EstimateKeySize(cyphertext)
+func EstimateRepeatingXORKey(ciphertext []byte) ([]byte, error) {
+	bestKeySize, err := EstimateKeySize(ciphertext)
 	if err != nil {
 		return nil, err
 	}
 
-	blocks := make([][]byte, bestKeySize)
+	return EstimateRepeatingXORKeyWithLen(ciphertext, bestKeySize)
+}
 
-	for i := 0; i < len(cyphertext); i++ {
-		index := i % bestKeySize
+func EstimateRepeatingXORKeyWithLen(ciphertext []byte, keylen int) ([]byte, error) {
+	blocks := make([][]byte, keylen)
+
+	for i := 0; i < len(ciphertext); i++ {
+		index := i % keylen
 		if len(blocks[index]) == 0 {
 			blocks[index] = []byte{}
 		}
-		blocks[index] = append(blocks[index], cyphertext[i])
+		blocks[index] = append(blocks[index], ciphertext[i])
 	}
 
 	var key []byte
