@@ -3,6 +3,7 @@ module github.com/ellemouton/cryptopals
 go 1.14
 
 require (
-	github.com/luno/jettison v0.0.0-20210218093327-95083f929b49 // indirect
+	github.com/kr/pretty v0.1.0 // indirect
 	github.com/stretchr/testify v1.7.0
+	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )
