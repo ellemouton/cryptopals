@@ -70,3 +70,129 @@ func (mt *MT19937) twist() {
 	}
 	mt.index = 0
 }
+
+// CLONEING
+
+func CloneMT19937(mt *MT19937) (*MT19937, error) {
+	clone := NewMT19937()
+
+	for i := 0; i < n; i++ {
+		next, err := mt.ExtractNumber()
+		if err != nil {
+			return nil, err
+		}
+
+		clone.MT[i] = untemper(next)
+	}
+
+	// fast forward so that clone is on same round as origional
+	clone.index = 0
+	for i := 0; i < n; i++ {
+		_, err := clone.ExtractNumber()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return clone, nil
+}
+
+func untemper(n uint32) uint32 {
+	y := reverseRShiftXOR(n, I)
+	y = reverseLXORShiftAndAnd(y, t, c)
+	y = reverseLXORShiftAndAnd(y, s, b)
+	y = reverseRXORShiftAndAnd(y, u, d)
+
+	return y
+}
+
+func reverseLXORShiftAndAnd(num uint32, t uint32, c uint32) uint32 {
+	var (
+		res   uint32
+		start = 0
+		end   = int(t)
+	)
+
+	chunk := num & mask(start, end)
+	res |= chunk
+
+	for end != 32 {
+		start = end
+		end += int(t)
+		if end > 32 {
+			end = 32
+		}
+
+		chunk = (chunk & ((c & mask(start, end)) >> start)) ^ ((num & mask(start, end)) >> start)
+		res |= (chunk << start)
+	}
+
+	return res
+}
+
+func reverseRXORShiftAndAnd(num uint32, t uint32, c uint32) uint32 {
+	var (
+		res   uint32
+		start = 32 - int(t)
+		end   = 32
+	)
+
+	chunk := (num & mask(start, end)) >> start
+	res = chunk << start
+
+	for start != 0 {
+		end = start
+		start -= int(t)
+		if start < 0 {
+			chunk = chunk >> -start
+			start = 0
+		}
+
+		chunk = (chunk & ((c & mask(start, end)) >> start)) ^ ((num & mask(start, end)) >> start)
+
+		res |= chunk << start
+	}
+
+	return res
+}
+
+func reverseRShiftXOR(num uint32, I uint32) uint32 {
+	var (
+		res   uint32
+		start = 32 - int(I)
+		end   = 32
+	)
+
+	chunk := (num & mask(start, end)) >> start
+
+	res |= chunk << start
+
+	for start != 0 {
+		end = start
+		start -= int(I)
+		if start < 0 {
+			chunk = chunk >> -start
+			start = 0
+		}
+
+		chunk ^= (num & mask(start, end)) >> start
+		res |= chunk << start
+
+	}
+
+	return res
+}
+
+func mask(start, end int) uint32 {
+	var res uint32
+
+	for i := 0; i < end-start; i++ {
+		res |= 1 << i
+	}
+
+	for i := 0; i < start; i++ {
+		res = res << 1
+	}
+
+	return res
+}
