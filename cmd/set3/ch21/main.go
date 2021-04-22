@@ -10,4 +10,7 @@ func main() {
 	mt := set3.NewMT19937()
 	mt.SeedMT(0)
 	fmt.Println(mt.ExtractNumber())
+	fmt.Println(mt.ExtractNumber())
+	fmt.Println(mt.ExtractNumber())
+	fmt.Println(mt.ExtractNumber())
 }
