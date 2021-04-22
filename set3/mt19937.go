@@ -3,45 +3,45 @@ package set3
 import "errors"
 
 var (
-	w                  = 64
-	n                  = 312
-	m                  = 156
+	w                  = 32
+	n                  = 624
+	m                  = 397
 	r                  = 31
-	a           uint64 = 0xB5026F5AA96619E9
-	u           uint64 = 29
-	d           uint64 = 0x5555555555555555
-	s           uint64 = 17
-	b           uint64 = 0x71D67FFFEDA60000
-	t           uint64 = 37
-	c           uint64 = 0xFFF7EEE000000000
-	I           uint64 = 43
-	f           uint64 = 6364136223846793005
-	lower_mask  uint64 = 0x000000007FFFFFFF
-	higher_mask uint64 = 0xFFFFFFFF80000000
+	a           uint32 = 0x9908B0DF
+	u           uint32 = 11
+	d           uint32 = 0xFFFFFFFF
+	s           uint32 = 7
+	b           uint32 = 0x9D2C5680
+	t           uint32 = 15
+	c           uint32 = 0xEFC60000
+	I           uint32 = 18
+	f           uint32 = 1812433253
+	lower_mask  uint32 = 0x7FFFFFFF
+	higher_mask uint32 = 0x80000000
 )
 
 type MT19937 struct {
-	MT    []uint64
+	MT    []uint32
 	index int
 }
 
 func NewMT19937() *MT19937 {
 	return &MT19937{
-		MT:    make([]uint64, n),
+		MT:    make([]uint32, n),
 		index: n + 1,
 	}
 }
 
-func (mt *MT19937) SeedMT(seed uint64) {
+func (mt *MT19937) SeedMT(seed uint32) {
 	mt.index = n
 	mt.MT[0] = seed
 
 	for i := 1; i < n; i++ {
-		mt.MT[i] = f*(mt.MT[i-1]^(mt.MT[i-1]>>(w-2))) + uint64(i)
+		mt.MT[i] = f*(mt.MT[i-1]^(mt.MT[i-1]>>(w-2))) + uint32(i)
 	}
 }
 
-func (mt *MT19937) ExtractNumber() (uint64, error) {
+func (mt *MT19937) ExtractNumber() (uint32, error) {
 	if mt.index >= n {
 		if mt.index > n {
 			return 0, errors.New("generator was not seeded")
