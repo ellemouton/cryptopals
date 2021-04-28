@@ -1,3 +1,4 @@
-# Cryptopals challenges
+# My solutions to the cryptopals challenges
+[WIP]
 
-https://cryptopals.com/
+See the challenges here: https://cryptopals.com/
