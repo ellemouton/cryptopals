@@ -2,11 +2,10 @@ package set4
 
 import (
 	"bytes"
-	"crypto/sha1"
 )
 
 func SecretPrefixedMac(key, msg []byte) []byte {
-	res := sha1.Sum(append(key, msg...))
+	res := Sum(append(key, msg...))
 	return res[:]
 }
 
