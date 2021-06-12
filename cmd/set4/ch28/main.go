@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/sha1"
 	"fmt"
 
 	"github.com/ellemouton/cryptopals/set2"
@@ -19,13 +18,12 @@ func main() {
 	msg = []byte("my very secret message")
 	fmt.Println(set4.AuthenticateMAC(key, msg, mac))
 
-	h := sha1.New()
+	h := set4.New()
 	h.Write([]byte("blah"))
 	fmt.Println(h.Sum(nil))
 	h.Write([]byte("blah"))
 	fmt.Println(h.Sum(nil))
 
-	h2 := sha1.New()
-	h2.Write([]byte("blahblah"))
-	fmt.Println(h2.Sum(nil))
+	//h2 := set4.New()
+	fmt.Println(set4.Sum([]byte("blahblah")))
 }

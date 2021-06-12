@@ -6,7 +6,7 @@
 //
 // SHA-1 is cryptographically broken and should not be used for secure
 // applications.
-package set4
+package sha1
 
 import (
 	"encoding/binary"
@@ -30,15 +30,15 @@ const (
 	init4 = 0xC3D2E1F0
 )
 
-// digest represents the partial evaluation of a checksum.
-type digest struct {
+// Digest represents the partial evaluation of a checksum.
+type Digest struct {
 	h   [5]uint32
 	x   [chunk]byte
 	nx  int
 	len uint64
 }
 
-func (d *digest) Reset() {
+func (d *Digest) Reset() {
 	d.h[0] = init0
 	d.h[1] = init1
 	d.h[2] = init2
@@ -52,16 +52,16 @@ func (d *digest) Reset() {
 // implements encoding.BinaryMarshaler and encoding.BinaryUnmarshaler to
 // marshal and unmarshal the internal state of the hash.
 func New() hash.Hash {
-	d := new(digest)
+	d := new(Digest)
 	d.Reset()
 	return d
 }
 
-func (d *digest) Size() int { return Size }
+func (d *Digest) Size() int { return Size }
 
-func (d *digest) BlockSize() int { return BlockSize }
+func (d *Digest) BlockSize() int { return BlockSize }
 
-func (d *digest) Write(p []byte) (nn int, err error) {
+func (d *Digest) Write(p []byte) (nn int, err error) {
 	nn = len(p)
 	d.len += uint64(nn)
 	if d.nx > 0 {
@@ -84,48 +84,84 @@ func (d *digest) Write(p []byte) (nn int, err error) {
 	return
 }
 
-func (d *digest) Sum(in []byte) []byte {
+func (d *Digest) Sum(in []byte) []byte {
 	// Make a copy of d so that caller can keep writing and summing.
 	d0 := *d
 	hash := d0.checkSum()
 	return append(in, hash[:]...)
 }
 
-func (d *digest) checkSum() [Size]byte {
+func padding(d *Digest) []byte {
+	var res []byte
+
 	len := d.len
 	// Padding.  Add a 1 bit and 0 bits until 56 bytes mod 64.
-	var tmp [64]byte
+	var (
+		tmp  [64]byte
+		tmp2 [64]byte
+	)
 	tmp[0] = 0x80
 	if len%64 < 56 {
-		d.Write(tmp[0 : 56-len%64])
+		res = tmp[0 : 56-len%64]
 	} else {
-		d.Write(tmp[0 : 64+56-len%64])
+		res = tmp[0 : 64+56-len%64]
 	}
 
 	// Length in bits.
 	len <<= 3
-	binary.BigEndian.PutUint64(tmp[:], len)
-	d.Write(tmp[0:8])
+	binary.BigEndian.PutUint64(tmp2[:], len)
+	return append(res, tmp2[0:8]...)
+}
+
+func (d *Digest) checkSum() [Size]byte {
+	pad := padding(d)
+	d.Write(pad)
 
 	if d.nx != 0 {
 		panic("d.nx != 0")
 	}
 
-	var digest [Size]byte
+	var Digest [Size]byte
 
-	binary.BigEndian.PutUint32(digest[0:], d.h[0])
-	binary.BigEndian.PutUint32(digest[4:], d.h[1])
-	binary.BigEndian.PutUint32(digest[8:], d.h[2])
-	binary.BigEndian.PutUint32(digest[12:], d.h[3])
-	binary.BigEndian.PutUint32(digest[16:], d.h[4])
+	binary.BigEndian.PutUint32(Digest[0:], d.h[0])
+	binary.BigEndian.PutUint32(Digest[4:], d.h[1])
+	binary.BigEndian.PutUint32(Digest[8:], d.h[2])
+	binary.BigEndian.PutUint32(Digest[12:], d.h[3])
+	binary.BigEndian.PutUint32(Digest[16:], d.h[4])
 
-	return digest
+	return Digest
 }
 
 // Sum returns the SHA-1 checksum of the data.
 func Sum(data []byte) [Size]byte {
-	var d digest
+	var d Digest
 	d.Reset()
 	d.Write(data)
 	return d.checkSum()
+}
+
+func CustomInit(iv [5]uint32) *Digest {
+	d := new(Digest)
+
+	d.h[0] = iv[0]
+	d.h[1] = iv[1]
+	d.h[2] = iv[2]
+	d.h[3] = iv[3]
+	d.h[4] = iv[4]
+	d.nx = 0
+	d.len = 0
+
+	return d
+}
+
+func (d *Digest) GetState() [Size]byte {
+	var Digest [Size]byte
+
+	binary.BigEndian.PutUint32(Digest[0:], d.h[0])
+	binary.BigEndian.PutUint32(Digest[4:], d.h[1])
+	binary.BigEndian.PutUint32(Digest[8:], d.h[2])
+	binary.BigEndian.PutUint32(Digest[12:], d.h[3])
+	binary.BigEndian.PutUint32(Digest[16:], d.h[4])
+
+	return Digest
 }

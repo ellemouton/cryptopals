@@ -1,4 +1,4 @@
-package set4
+package sha1
 
 import (
 	"math/bits"
@@ -13,7 +13,7 @@ const (
 
 // blockGeneric is a portable, pure Go version of the SHA-1 block step.
 // It's used by sha1block_generic.go and tests.
-func blockGeneric(dig *digest, p []byte) {
+func blockGeneric(dig *Digest, p []byte) {
 	var w [16]uint32
 
 	h0, h1, h2, h3, h4 := dig.h[0], dig.h[1], dig.h[2], dig.h[3], dig.h[4]
