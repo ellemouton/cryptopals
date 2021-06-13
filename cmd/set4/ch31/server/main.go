@@ -20,6 +20,13 @@ func main() {
 	// Generate a key
 	key = set2.GenAESKey()
 
+	expected, err := set4.HMACSHA1(key, []byte("file"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("expected sig:", expected)
+
 	http.HandleFunc("/test", verifySig)
 	if err := http.ListenAndServe("127.0.0.1:9000", nil); err != nil {
 		log.Fatal(err)
@@ -55,8 +62,6 @@ func verifySig(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, err)
 		return
 	}
-
-	fmt.Fprintln(w, hex.EncodeToString(expected))
 
 	sigB, err := hex.DecodeString(sig)
 	if err != nil {
