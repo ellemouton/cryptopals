@@ -1,13 +1,12 @@
 package main
 
 import (
-	"encoding/binary"
 	"fmt"
 	"math/rand"
 	"time"
 
 	"github.com/ellemouton/cryptopals/set4"
-	"github.com/ellemouton/cryptopals/set4/sha1"
+	"github.com/ellemouton/cryptopals/set4/md4"
 )
 
 var (
@@ -22,39 +21,44 @@ func main() {
 	wanted := []byte(";admin=true")
 
 	key := pickRandomKey()
-	mac := sha1.SecretPrefixedMac(key, msg)
+	mac := md4.SecretKeyedMac(key, msg)
 	fmt.Println("Origional message: ", string(msg))
 	fmt.Println("Real key len:", len(key))
 	fmt.Println("MAC: ", mac)
-	fmt.Println("valid mac?", sha1.AuthenticateMAC(key, msg, mac))
+	fmt.Println("valid mac?", md4.AuthenticateMAC(key, msg, mac))
 
-	// split mac into 5
-	var iv [5]uint32
+	// get state from mac
+	var iv [4]uint32
 	for i, _ := range iv {
 		offset := i * 4
-		iv[i] = binary.BigEndian.Uint32(mac[offset : offset+4])
+		temp := mac[offset : offset+4]
+		var b uint32
+		b += uint32(temp[0]) << 0
+		b += uint32(temp[1]) << 8
+		b += uint32(temp[2]) << 16
+		b += uint32(temp[3]) << 24
+		iv[i] = b
 	}
 
 	var (
-		mac2      [20]byte
+		mac2      []byte
 		forgedMsg []byte
 		keyLen    int
 	)
 
 	// We dont know the key so gotta guess its len
 	for i := minKeyLen; i < maxKeyLen; i++ {
-
-		custom := sha1.CustomInit(iv)
+		custom := md4.CustomInit(iv)
 		custom.Write(wanted)
 
 		// add expected padding and write that
-		gluePadding := set4.MDPadBytesBE(i + len(msg))
+		gluePadding := set4.MDPadBytesLE(i + len(msg))
 		forgedMsg = append(msg, append(gluePadding, wanted...)...)
-		expectedPadding := set4.MDPadBytesBE(i + len(forgedMsg))
+		expectedPadding := set4.MDPadBytesLE(i + len(forgedMsg))
 		custom.Write(expectedPadding)
 		mac2 = custom.GetState()
 
-		if sha1.AuthenticateMAC(key, forgedMsg, mac2[:]) {
+		if md4.AuthenticateMAC(key, forgedMsg, mac2[:]) {
 			keyLen = i
 			break
 		}
@@ -63,7 +67,7 @@ func main() {
 	fmt.Println("New message: ", string(forgedMsg))
 	fmt.Println("Guessed key len: ", keyLen)
 	fmt.Println("MAC: ", mac2)
-	fmt.Println("valid mac?", sha1.AuthenticateMAC(key, forgedMsg, mac2[:]))
+	fmt.Println("valid mac?", md4.AuthenticateMAC(key, forgedMsg, mac2))
 }
 
 func pickRandomKey() []byte {
