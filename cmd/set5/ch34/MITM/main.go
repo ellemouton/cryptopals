@@ -28,7 +28,7 @@ func main() {
 	go bob(chanMB)
 	go mallary(chanAM, chanMB)
 
-	err := alice(chanAM, "ermergerd")
+	err := alice(chanAM, "Super secret")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,8 +37,8 @@ func main() {
 func mallary(chA, chB chan string) {
 	var (
 		// A, B *big.Int
-		p, g       *big.Int
-		fullCT, ct []byte
+		p, g *big.Int
+		ct   []byte
 	)
 
 	for {
@@ -71,13 +71,12 @@ func mallary(chA, chB chan string) {
 		fmt.Printf("M: The secret will be: %s", hex.EncodeToString(s))
 
 		// get encrypted msg from alice
-		fullCT = []byte(<-chA)
+		ct = []byte(<-chA)
 		fmt.Println("M: got ct from alice")
 
 		fmt.Println("M: decrypting....")
-		iv := fullCT[len(fullCT)-16:]
-		ct = fullCT[:len(fullCT)-16]
-		pt, err := set2.CBCDecrypt(ct, s, iv)
+		iv := ct[len(ct)-16:]
+		pt, err := set2.CBCDecrypt(ct[:len(ct)-16], s, iv)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -86,16 +85,15 @@ func mallary(chA, chB chan string) {
 
 		// pass it on to bob
 		fmt.Println("M: passing ct to bob")
-		chB <- string(fullCT)
+		chB <- string(ct)
 
 		// get encrypted msg from bob
-		fullCT = []byte(<-chB)
+		ct = []byte(<-chB)
 		fmt.Println("M: got ct from bob")
 
 		fmt.Println("M: decrypting....")
-		iv = fullCT[len(fullCT)-16:]
-		ct = fullCT[:len(fullCT)-16]
-		pt, err = set2.CBCDecrypt(ct, s, iv)
+		iv = ct[len(ct)-16:]
+		pt, err = set2.CBCDecrypt(ct[:len(ct)-16], s, iv)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -104,7 +102,7 @@ func mallary(chA, chB chan string) {
 
 		// pass it on to alice
 		fmt.Println("M: passing ct to alice")
-		chA <- string(fullCT)
+		chA <- string(ct)
 	}
 
 }
