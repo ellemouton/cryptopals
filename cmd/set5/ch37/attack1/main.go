@@ -45,10 +45,8 @@ func client(ch chan string) error {
 	// send I (email)
 	ch <- email
 
-	// Derive and send A
-	a := big.NewInt(rand.Int63n(1000))
-	A := set5.DHPubkey(a, G, N)
-	ch <- string(A.Bytes())
+	// send A = 0
+	ch <- string(big.NewInt(0).Bytes())
 
 	// get salt and B from server
 	salt, err := strconv.ParseInt(<-ch, 10, 64)
@@ -56,28 +54,15 @@ func client(ch chan string) error {
 		return err
 	}
 
-	B := new(big.Int).SetBytes([]byte(<-ch))
+	// get B from server
+	<-ch
 
-	uH := sha256.Sum256(append(A.Bytes(), B.Bytes()...))
-	u := new(big.Int).SetBytes(uH[:])
-
-	// get password from user
+	// get password address from user
 	fmt.Println("password: ")
 	fmt.Scanln(&password)
 
-	// x = bigInt(sha256(salt | password))
-	x := getX(salt, password)
-
-	temp := new(big.Int)
-	temp.Mul(set5.DHPubkey(x, G, N), K)
-	temp.Sub(B, temp)
-
-	exp := new(big.Int)
-	exp.Mul(u, x)
-	exp.Add(exp, a)
-
-	s := set5.DHKey(exp, temp, N)
-	k := sha256.Sum256(s[:])
+	s := big.NewInt(0).Bytes()
+	k := sha256.Sum256(s)
 
 	saltBytes := make([]byte, 64)
 	binary.LittleEndian.PutUint64(saltBytes, uint64(salt))
